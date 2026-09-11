@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff-service
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Configuración de Azure AD OIDC / MSAL
+          issuer-uri: ${AZURE_AD_ISSUER_URI:https://login.microsoftonline.com/common/v2.0}
+          jwk-set-uri: ${AZURE_AD_JWK_SET_URI:https://login.microsoftonline.com/common/discovery/v2.0/keys}
+
+azure:
+  activedirectory:
+    enabled: ${AZURE_AUTH_ENABLED:false} # En false permite modo desarrollo/demo sin bloquear
+    client-id: ${AZURE_CLIENT_ID:00000000-0000-0000-0000-000000000000}
+    tenant-id: ${AZURE_TENANT_ID:common}
+    app-id-uri: ${AZURE_APP_ID_URI:api://00000000-0000-0000-0000-000000000000}
+
+services:
+  movie-service:
+    url: ${MOVIE_SERVICE_URL:http://localhost:8082}
+  ticket-service:
+    url: ${TICKET_SERVICE_URL:http://localhost:8083}
