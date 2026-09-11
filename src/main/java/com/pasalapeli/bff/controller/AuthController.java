@@ -1,6 +1,9 @@
 package com.pasalapeli.bff.controller;
 
+import com.pasalapeli.bff.client.TicketClient;
 import com.pasalapeli.bff.dto.UserProfileDTO;
+import com.pasalapeli.bff.dto.UsuarioDTO;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +20,11 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 @Slf4j
 public class AuthController {
+
+    private final TicketClient ticketClient;
 
     @Value("${azure.activedirectory.client-id:00000000-0000-0000-0000-000000000000}")
     private String clientId;
@@ -59,12 +65,20 @@ public class AuthController {
             if (givenName != null) name = givenName;
         }
 
-        // Mapeo id para demo (Vicente = 2, Martin = 3, Admin = 1)
-        Long userId = 2L;
-        if (roles.contains("ROLE_ADMIN")) {
-            userId = 1L;
-        } else if (email != null && email.contains("martin")) {
-            userId = 3L;
+        // Registra o recupera el usuario real en Ticket Service (find-or-create por correo)
+        Long userId = null;
+        if (email != null) {
+            try {
+                UsuarioDTO usuario = ticketClient.ensureUsuario(email, name);
+                userId = usuario.getId();
+            } catch (Exception e) {
+                log.warn("No se pudo registrar/recuperar el usuario en Ticket Service: {}", e.getMessage());
+            }
+        }
+
+        // Fallback demo si Ticket Service no responde
+        if (userId == null) {
+            userId = roles.contains("ROLE_ADMIN") ? 1L : 2L;
         }
 
         return ResponseEntity.ok(UserProfileDTO.builder()
