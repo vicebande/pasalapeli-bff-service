@@ -61,3 +61,32 @@ O con Docker:
 docker build -t bff-service .
 docker run -p 8080:8080 bff-service
 ```
+
+---
+
+## ☁️ Despliegue CI/CD (GitHub Actions → EC2)
+
+Este repo se despliega **solo a sí mismo** sobre una instancia **EC2 (Ubuntu 24.04)** que ya porta el stack completo. El orquestador vive en el repo [`pasalapeli-database`](https://github.com) (contiene el `docker-compose.yml` global en `/opt/pasalapeli/`).
+
+### Workflow `.github/workflows/deploy.yml`
+En cada `push` a `main`:
+1. SSH al EC2 (acción `appleboy/ssh-action`).
+2. `git pull` del código de `bff-service` en `/opt/pasalapeli/pasalapeli-bff-service`.
+3. `docker compose up -d --build bff-service`.
+4. Espera el estado `healthy` del contenedor vía `/actuator/health`.
+
+### GitHub Secrets requeridos en este repo
+| Secret | Descripción |
+|---|---|
+| `EC2_HOST` | IP pública del EC2 |
+| `EC2_USER` | Usuario SSH (usualmente `ubuntu`) |
+| `EC2_SSH_KEY` | Clave privada SSH (.pem) |
+
+### Variables de entorno en producción (definidas en el `.env` del orquestador)
+- `AZURE_AUTH_ENABLED=true`
+- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_APP_ID_URI`
+- `AZURE_AD_ISSUER_URI=https://login.microsoftonline.com/<tenant-id>/v2.0`
+- `AZURE_AD_JWK_SET_URI=https://login.microsoftonline.com/<tenant-id>/discovery/v2.0/keys`
+- `MOVIE_SERVICE_URL=http://movie-service:8082`
+- `TICKET_SERVICE_URL=http://ticket-service:8083`
+- `CORS_ALLOWED_ORIGINS=https://<tu-dominio>`

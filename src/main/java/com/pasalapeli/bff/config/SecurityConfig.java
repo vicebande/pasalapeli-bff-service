@@ -53,6 +53,9 @@ public class SecurityConfig {
     @Value("${azure.activedirectory.app-id-uri:api://00000000-0000-0000-0000-000000000000}")
     private String appIdUri;
 
+    @Value("${app.cors.allowed-origins:*}")
+    private String corsAllowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -131,7 +134,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+        // En produccion: restringir al dominio del frontend via CORS_ALLOWED_ORIGINS
+        configuration.setAllowedOrigins(List.of(corsAllowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", "X-Dev-User-Role", "X-Dev-User-Email"));
         configuration.setExposedHeaders(List.of("Authorization"));
