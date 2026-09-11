@@ -67,6 +67,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/cartelera/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/login-info").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Healthcheck de Docker / Actuator (no requiere autenticacion)
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Rutas exclusivas para administradores
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Rutas protegidas para clientes y administradores
