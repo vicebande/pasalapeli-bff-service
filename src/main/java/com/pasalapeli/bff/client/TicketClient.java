@@ -1,5 +1,7 @@
 package com.pasalapeli.bff.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pasalapeli.bff.dto.UsuarioDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class TicketClient {
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${services.ticket-service.url:http://localhost:8083}")
     private String ticketServiceUrl;
@@ -31,7 +34,17 @@ public class TicketClient {
             return restTemplate.postForEntity(url, request, Object.class);
         } catch (HttpClientErrorException e) {
             log.warn("Error recibido desde Ticket Service: Status {}", e.getStatusCode());
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+            Map<String, Object> errorBody;
+            try {
+                errorBody = objectMapper.readValue(e.getResponseBodyAsString(),
+                        new TypeReference<Map<String, Object>>() {});
+            } catch (Exception parseEx) {
+                errorBody = new HashMap<>();
+                errorBody.put("status", e.getStatusCode().value());
+                errorBody.put("error", e.getStatusText());
+                errorBody.put("message", e.getResponseBodyAsString());
+            }
+            return ResponseEntity.status(e.getStatusCode()).body(errorBody);
         }
     }
 
