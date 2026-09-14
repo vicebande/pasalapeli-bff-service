@@ -50,4 +50,17 @@ public class AdminBffController {
         log.info("BFF: Solicitud de creación de función (Admin)");
         return ResponseEntity.status(HttpStatus.CREATED).body(movieClient.crearFuncion(funcionRequest));
     }
+
+    @PutMapping("/funciones/{id}")
+    public ResponseEntity<?> actualizarFuncion(@PathVariable Long id, @RequestBody Object funcionRequest) {
+        log.info("BFF: Solicitud de actualización de función ID: {}", id);
+        return ResponseEntity.ok(movieClient.actualizarFuncion(id, funcionRequest));
+    }
+
+    @DeleteMapping("/funciones/{id}")
+    public ResponseEntity<Void> eliminarFuncion(@PathVariable Long id) {
+        log.info("BFF: Solicitud de eliminación de función ID: {}", id);
+        movieClient.eliminarFuncion(id);
+        return ResponseEntity.noContent().build();
+    }
 }

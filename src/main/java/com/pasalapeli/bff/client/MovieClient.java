@@ -85,4 +85,17 @@ public class MovieClient {
     public Object crearFuncion(Object funcionRequest) {
         return restTemplate.postForObject(movieServiceUrl + "/api/funciones", funcionRequest, Object.class);
     }
+
+    public Object actualizarFuncion(Long id, Object funcionRequest) {
+        ResponseEntity<Object> resp = restTemplate.exchange(
+                movieServiceUrl + "/api/funciones/" + id,
+                HttpMethod.PUT,
+                new HttpEntity<>(funcionRequest),
+                Object.class);
+        return resp.getBody();
+    }
+
+    public void eliminarFuncion(Long id) {
+        restTemplate.delete(movieServiceUrl + "/api/funciones/" + id);
+    }
 }
