@@ -23,8 +23,19 @@ public class TicketBffController {
     private final UsuarioContext usuarioContext;
 
     @PostMapping("/comprar")
-    public ResponseEntity<?> comprarTicket(@RequestBody Object request) {
+    public ResponseEntity<?> comprarTicket(Authentication authentication, @RequestBody Map<String, Object> request) {
         log.info("BFF: Recibida solicitud de compra de ticket");
+        // El usuario se resuelve desde la autenticación (JWT o cabeceras de demo),
+        // nunca se confía en el usuarioId que envía el cliente.
+        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
+        if (usuario == null || usuario.getId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", HttpStatus.UNAUTHORIZED.value(),
+                    "error", "Unauthorized",
+                    "message", "Usuario no autenticado"
+            ));
+        }
+        request.put("usuarioId", usuario.getId());
         return ticketClient.comprarTicket(request);
     }
 
