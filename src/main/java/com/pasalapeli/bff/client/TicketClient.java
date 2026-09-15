@@ -52,6 +52,26 @@ public class TicketClient {
         return restTemplate.getForObject(ticketServiceUrl + "/api/tickets/" + id, Object.class);
     }
 
+    public ResponseEntity<?> devolverTicket(Long id) {
+        String url = ticketServiceUrl + "/api/tickets/" + id + "/devolver";
+        try {
+            return restTemplate.postForEntity(url, null, Object.class);
+        } catch (HttpClientErrorException e) {
+            log.warn("Error recibido desde Ticket Service al devolver ticket: Status {}", e.getStatusCode());
+            Map<String, Object> errorBody;
+            try {
+                errorBody = objectMapper.readValue(e.getResponseBodyAsString(),
+                        new TypeReference<Map<String, Object>>() {});
+            } catch (Exception parseEx) {
+                errorBody = new HashMap<>();
+                errorBody.put("status", e.getStatusCode().value());
+                errorBody.put("error", e.getStatusText());
+                errorBody.put("message", e.getResponseBodyAsString());
+            }
+            return ResponseEntity.status(e.getStatusCode()).body(errorBody);
+        }
+    }
+
     public Object obtenerPorCodigo(String codigo) {
         return restTemplate.getForObject(ticketServiceUrl + "/api/tickets/codigo/" + codigo, Object.class);
     }

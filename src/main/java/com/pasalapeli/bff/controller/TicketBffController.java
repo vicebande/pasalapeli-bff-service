@@ -57,6 +57,32 @@ public class TicketBffController {
         return ResponseEntity.ok(ticketClient.obtenerPorId(id));
     }
 
+    @PostMapping("/{id}/devolver")
+    public ResponseEntity<?> devolverTicket(Authentication authentication, @PathVariable Long id) {
+        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
+        if (usuario == null || usuario.getId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", HttpStatus.UNAUTHORIZED.value(),
+                    "error", "Unauthorized",
+                    "message", "Usuario no autenticado"
+            ));
+        }
+
+        Object ticketObj = ticketClient.obtenerPorId(id);
+        if (ticketObj instanceof Map<?, ?> ticketMap) {
+            Object propietarioId = ticketMap.get("usuarioId");
+            if (propietarioId == null || !String.valueOf(propietarioId).equals(String.valueOf(usuario.getId()))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                        "status", HttpStatus.FORBIDDEN.value(),
+                        "error", "Forbidden",
+                        "message", "Solo el dueño del ticket puede realizar la devolución"
+                ));
+            }
+        }
+
+        return ticketClient.devolverTicket(id);
+    }
+
     @GetMapping("/codigo/{codigo}")
     public ResponseEntity<?> obtenerPorCodigo(@PathVariable String codigo) {
         return ResponseEntity.ok(ticketClient.obtenerPorCodigo(codigo));
