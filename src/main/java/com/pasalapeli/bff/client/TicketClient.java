@@ -31,7 +31,8 @@ public class TicketClient {
     public ResponseEntity<?> comprarTicket(Object request) {
         String url = ticketServiceUrl + "/api/tickets/comprar";
         try {
-            return restTemplate.postForEntity(url, request, Object.class);
+            ResponseEntity<Object> resp = restTemplate.postForEntity(url, request, Object.class);
+            return ResponseEntity.status(resp.getStatusCode()).body(resp.getBody());
         } catch (HttpClientErrorException e) {
             log.warn("Error recibido desde Ticket Service: Status {}", e.getStatusCode());
             Map<String, Object> errorBody;
@@ -55,7 +56,8 @@ public class TicketClient {
     public ResponseEntity<?> devolverTicket(Long id) {
         String url = ticketServiceUrl + "/api/tickets/" + id + "/devolver";
         try {
-            return restTemplate.postForEntity(url, null, Object.class);
+            ResponseEntity<Object> resp = restTemplate.postForEntity(url, null, Object.class);
+            return ResponseEntity.status(resp.getStatusCode()).body(resp.getBody());
         } catch (HttpClientErrorException e) {
             log.warn("Error recibido desde Ticket Service al devolver ticket: Status {}", e.getStatusCode());
             Map<String, Object> errorBody;
