@@ -88,8 +88,4 @@ public class TicketClient {
     public List<?> listarPorUsuario(Long usuarioId) {
         return restTemplate.getForObject(ticketServiceUrl + "/api/tickets/usuario/" + usuarioId, List.class);
     }
-
-    public List<?> listarTodos() {
-        return restTemplate.getForObject(ticketServiceUrl + "/api/tickets", List.class);
-    }
 }

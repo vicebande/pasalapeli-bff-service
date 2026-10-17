@@ -36,7 +36,6 @@ import java.util.Map;
 public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
-    private final DevMockAuthFilter devMockAuthFilter;
 
     @Value("${azure.activedirectory.enabled:false}")
     private boolean azureEnabled;
@@ -111,8 +110,9 @@ public class SecurityConfig {
                     })
             );
         } else {
-            // Modo local / desarrollo
-            http.addFilterBefore(devMockAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            // Modo local / desarrollo: el filtro NO es bean (evita el registro como filtro
+            // servlet fuera de la cadena) y solo se anade aqui cuando Azure esta desactivado.
+            http.addFilterBefore(new DevMockAuthFilter(azureEnabled), UsernamePasswordAuthenticationFilter.class);
         }
 
         return http.build();

@@ -26,12 +26,14 @@ public class NotificationBffController {
     private final UsuarioContext usuarioContext;
 
     @GetMapping
-    public ResponseEntity<?> listar(Authentication authentication) {
+    public ResponseEntity<?> listar(Authentication authentication,
+                                    @RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "20") int size) {
         UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
         if (usuario == null || usuario.getId() == null) {
             return noAutenticado();
         }
-        return ResponseEntity.ok(notificationClient.listarPorUsuario(usuario.getId()));
+        return ResponseEntity.ok(notificationClient.listarPorUsuario(usuario.getId(), page, size));
     }
 
     @GetMapping("/no-leidas/count")

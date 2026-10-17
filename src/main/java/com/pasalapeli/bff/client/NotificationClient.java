@@ -31,9 +31,11 @@ public class NotificationClient {
 
     // ------------------------------ Usuario ------------------------------
 
-    public List<?> listarPorUsuario(Long usuarioId) {
+    public Object listarPorUsuario(Long usuarioId, int page, int size) {
         return restTemplate.getForObject(
-                notificationServiceUrl + "/api/notificaciones/usuario/" + usuarioId, List.class);
+                notificationServiceUrl + "/api/notificaciones/usuario/" + usuarioId
+                        + "?page=" + page + "&size=" + size,
+                Object.class);
     }
 
     public Object contarNoLeidas(Long usuarioId) {

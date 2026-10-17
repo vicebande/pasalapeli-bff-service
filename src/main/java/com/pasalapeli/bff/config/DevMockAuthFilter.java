@@ -5,11 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -17,25 +15,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Filtro de autenticación para modo desarrollo/demo.
- * Si Azure AD está desactivado o se envían cabeceras de desarrollo, inyecta la identidad en el contexto de seguridad.
+ * Filtro de autenticacion para modo desarrollo/demo.
+ * SOLO actua cuando Azure AD esta desactivado ({@code azure.activedirectory.enabled=false}).
+ * Con Azure activo el filtro es inerte: las cabeceras X-Dev-User-* NUNCA se consideran,
+ * de modo que no es posible suplantar identidades (spoofing) en produccion.
+ *
+ * No es un {@code @Component} a proposito: asi Spring Boot no lo registra como filtro
+ * servlet fuera de la cadena de seguridad; solo se inyecta en SecurityConfig.
  */
-@Component
 @Slf4j
 public class DevMockAuthFilter extends OncePerRequestFilter {
 
-    @Value("${azure.activedirectory.enabled:false}")
-    private boolean azureEnabled;
+    private final boolean azureEnabled;
+
+    public DevMockAuthFilter(boolean azureEnabled) {
+        this.azureEnabled = azureEnabled;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Si Azure AD está desactivado o se proveen headers de emulación de usuario
-        String devRole = request.getHeader("X-Dev-User-Role");
-        String devEmail = request.getHeader("X-Dev-User-Email");
+        if (!azureEnabled) {
+            String devRole = request.getHeader("X-Dev-User-Role");
+            String devEmail = request.getHeader("X-Dev-User-Email");
 
-        if (!azureEnabled || devRole != null) {
             String role = (devRole != null && !devRole.isBlank()) ? devRole.toUpperCase() : "CLIENTE";
             String email = (devEmail != null && !devEmail.isBlank()) ? devEmail : "usuario.demo@pasalapeli.cl";
 
@@ -49,6 +53,8 @@ public class DevMockAuthFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(email, null, authorities);
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+        } else if (request.getHeader("X-Dev-User-Role") != null) {
+            log.warn("Cabeceras X-Dev-User-* ignoradas: Azure AD esta activo");
         }
 
         filterChain.doFilter(request, response);

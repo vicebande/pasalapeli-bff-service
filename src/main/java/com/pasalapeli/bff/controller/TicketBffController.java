@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -53,33 +53,20 @@ public class TicketBffController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<?> obtenerPorId(Authentication authentication, @PathVariable Long id) {
+        ResponseEntity<?> ownership = verificarOwnership(authentication, id);
+        if (ownership != null) {
+            return ownership;
+        }
         return ResponseEntity.ok(ticketClient.obtenerPorId(id));
     }
 
     @PostMapping("/{id}/devolver")
     public ResponseEntity<?> devolverTicket(Authentication authentication, @PathVariable Long id) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "status", HttpStatus.UNAUTHORIZED.value(),
-                    "error", "Unauthorized",
-                    "message", "Usuario no autenticado"
-            ));
+        ResponseEntity<?> ownership = verificarOwnership(authentication, id);
+        if (ownership != null) {
+            return ownership;
         }
-
-        Object ticketObj = ticketClient.obtenerPorId(id);
-        if (ticketObj instanceof Map<?, ?> ticketMap) {
-            Object propietarioId = ticketMap.get("usuarioId");
-            if (propietarioId == null || !String.valueOf(propietarioId).equals(String.valueOf(usuario.getId()))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                        "status", HttpStatus.FORBIDDEN.value(),
-                        "error", "Forbidden",
-                        "message", "Solo el dueño del ticket puede realizar la devolución"
-                ));
-            }
-        }
-
         return ticketClient.devolverTicket(id);
     }
 
@@ -89,7 +76,66 @@ public class TicketBffController {
     }
 
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<?>> listarPorUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<?> listarPorUsuario(Authentication authentication, @PathVariable Long usuarioId) {
+        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
+        if (usuario == null || usuario.getId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", HttpStatus.UNAUTHORIZED.value(),
+                    "error", "Unauthorized",
+                    "message", "Usuario no autenticado"
+            ));
+        }
+        if (!usuario.getId().equals(usuarioId) && !esAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "status", HttpStatus.FORBIDDEN.value(),
+                    "error", "Forbidden",
+                    "message", "Solo puedes consultar tus propios tickets"
+            ));
+        }
         return ResponseEntity.ok(ticketClient.listarPorUsuario(usuarioId));
+    }
+
+    /**
+     * Verifica que el ticket pertenezca al usuario autenticado (o que sea ADMIN).
+     * Devuelve null si el acceso esta permitido; la respuesta 401/403 correspondiente en caso contrario.
+     */
+    private ResponseEntity<?> verificarOwnership(Authentication authentication, Long ticketId) {
+        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
+        if (usuario == null || usuario.getId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", HttpStatus.UNAUTHORIZED.value(),
+                    "error", "Unauthorized",
+                    "message", "Usuario no autenticado"
+            ));
+        }
+        if (esAdmin(authentication)) {
+            return null;
+        }
+        Object ticketObj;
+        try {
+            ticketObj = ticketClient.obtenerPorId(ticketId);
+        } catch (HttpClientErrorException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of(
+                    "status", e.getStatusCode().value(),
+                    "error", e.getStatusText(),
+                    "message", e.getStatusCode().value() == 404 ? "Ticket no encontrado" : "Acceso denegado"
+            ));
+        }
+        if (ticketObj instanceof Map<?, ?> ticketMap) {
+            Object propietarioId = ticketMap.get("usuarioId");
+            if (propietarioId == null || !String.valueOf(propietarioId).equals(String.valueOf(usuario.getId()))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                        "status", HttpStatus.FORBIDDEN.value(),
+                        "error", "Forbidden",
+                        "message", "Solo el dueno del ticket puede acceder a el"
+                ));
+            }
+        }
+        return null;
+    }
+
+    private boolean esAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

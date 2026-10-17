@@ -15,6 +15,7 @@ public class WebClientConfig {
         return builder
                 .setConnectTimeout(Duration.ofSeconds(5))
                 .setReadTimeout(Duration.ofSeconds(15))
+                .interceptors(new RequestHeaderRelayInterceptor())
                 .build();
     }
 }
