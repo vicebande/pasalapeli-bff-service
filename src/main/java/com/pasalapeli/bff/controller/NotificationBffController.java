@@ -5,16 +5,14 @@ import com.pasalapeli.bff.dto.UsuarioDTO;
 import com.pasalapeli.bff.service.UsuarioContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 /**
  * BFF del buzon de notificaciones del usuario autenticado. Resuelve el usuario
  * real y delega en el microservicio de notificaciones.
+ * La validacion de sesion vive en UsuarioContext.requerido() (sin duplicados).
  */
 @RestController
 @RequestMapping("/api/notificaciones")
@@ -29,45 +27,25 @@ public class NotificationBffController {
     public ResponseEntity<?> listar(Authentication authentication,
                                     @RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "20") int size) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return noAutenticado();
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         return ResponseEntity.ok(notificationClient.listarPorUsuario(usuario.getId(), page, size));
     }
 
     @GetMapping("/no-leidas/count")
     public ResponseEntity<?> contarNoLeidas(Authentication authentication) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return noAutenticado();
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         return ResponseEntity.ok(notificationClient.contarNoLeidas(usuario.getId()));
     }
 
     @PostMapping("/{id}/leer")
     public ResponseEntity<?> marcarLeida(Authentication authentication, @PathVariable Long id) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return noAutenticado();
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         return notificationClient.marcarLeida(id, usuario.getId());
     }
 
     @PostMapping("/leer-todas")
     public ResponseEntity<?> marcarTodasLeidas(Authentication authentication) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return noAutenticado();
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         return notificationClient.marcarTodasLeidas(usuario.getId());
-    }
-
-    private ResponseEntity<?> noAutenticado() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                "status", HttpStatus.UNAUTHORIZED.value(),
-                "error", "Unauthorized",
-                "message", "Usuario no autenticado"
-        ));
     }
 }

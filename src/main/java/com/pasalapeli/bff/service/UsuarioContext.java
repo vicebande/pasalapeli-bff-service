@@ -2,6 +2,7 @@ package com.pasalapeli.bff.service;
 
 import com.pasalapeli.bff.client.TicketClient;
 import com.pasalapeli.bff.dto.UsuarioDTO;
+import com.pasalapeli.bff.exception.NoAutenticadoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -52,5 +53,17 @@ public class UsuarioContext {
                 .correo(email)
                 .nombre(name)
                 .build();
+    }
+
+    /**
+     * Resuelve el usuario autenticado o lanza NoAutenticadoException (401).
+     * Reemplaza al bloque resolver+null-check+Map.of que se repetia en cada endpoint.
+     */
+    public UsuarioDTO requerido(Authentication authentication) {
+        UsuarioDTO usuario = resolverUsuario(authentication);
+        if (usuario == null || usuario.getId() == null) {
+            throw new NoAutenticadoException("Usuario no autenticado");
+        }
+        return usuario;
     }
 }

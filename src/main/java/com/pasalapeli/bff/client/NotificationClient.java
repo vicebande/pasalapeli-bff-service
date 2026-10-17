@@ -1,30 +1,24 @@
 package com.pasalapeli.bff.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Cliente REST hacia el microservicio de notificaciones. El BFF resuelve el
  * usuario autenticado y propaga su id; nunca se confia en el cliente.
+ * El manejo de errores POST/DELETE vive en DownstreamClient (sin duplicados).
  */
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class NotificationClient {
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+    private final DownstreamClient downstream;
 
     @Value("${services.notification-service.url:http://localhost:8084}")
     private String notificationServiceUrl;
@@ -45,11 +39,11 @@ public class NotificationClient {
     }
 
     public ResponseEntity<?> marcarLeida(Long id, Long usuarioId) {
-        return post(notificationServiceUrl + "/api/notificaciones/" + id + "/leer?usuarioId=" + usuarioId, null);
+        return downstream.post(notificationServiceUrl + "/api/notificaciones/" + id + "/leer?usuarioId=" + usuarioId, null, "Notification Service");
     }
 
     public ResponseEntity<?> marcarTodasLeidas(Long usuarioId) {
-        return post(notificationServiceUrl + "/api/notificaciones/usuario/" + usuarioId + "/leer-todas", null);
+        return downstream.post(notificationServiceUrl + "/api/notificaciones/usuario/" + usuarioId + "/leer-todas", null, "Notification Service");
     }
 
     // ------------------------------ Admin ------------------------------
@@ -59,11 +53,11 @@ public class NotificationClient {
     }
 
     public ResponseEntity<?> crearDestino(Object request) {
-        return post(notificationServiceUrl + "/api/notificaciones/admin/destinos", request);
+        return downstream.post(notificationServiceUrl + "/api/notificaciones/admin/destinos", request, "Notification Service");
     }
 
     public ResponseEntity<?> eliminarDestino(Long id) {
-        return delete(notificationServiceUrl + "/api/notificaciones/admin/destinos/" + id);
+        return downstream.delete(notificationServiceUrl + "/api/notificaciones/admin/destinos/" + id, "Notification Service");
     }
 
     public List<?> listarReglas() {
@@ -71,11 +65,11 @@ public class NotificationClient {
     }
 
     public ResponseEntity<?> crearRegla(Object request) {
-        return post(notificationServiceUrl + "/api/notificaciones/admin/reglas", request);
+        return downstream.post(notificationServiceUrl + "/api/notificaciones/admin/reglas", request, "Notification Service");
     }
 
     public ResponseEntity<?> eliminarRegla(Long id) {
-        return delete(notificationServiceUrl + "/api/notificaciones/admin/reglas/" + id);
+        return downstream.delete(notificationServiceUrl + "/api/notificaciones/admin/reglas/" + id, "Notification Service");
     }
 
     public List<?> listarMensajesFallidos() {
@@ -84,41 +78,6 @@ public class NotificationClient {
     }
 
     public ResponseEntity<?> eliminarMensajeFallido(Long id) {
-        return delete(notificationServiceUrl + "/api/notificaciones/admin/mensajes-fallidos/" + id);
-    }
-
-    // ------------------------------ Helpers ------------------------------
-
-    private ResponseEntity<?> post(String url, Object body) {
-        try {
-            ResponseEntity<Object> resp = restTemplate.postForEntity(url, body, Object.class);
-            return ResponseEntity.status(resp.getStatusCode()).body(resp.getBody());
-        } catch (HttpClientErrorException e) {
-            log.warn("Error recibido desde Notification Service: Status {}", e.getStatusCode());
-            return ResponseEntity.status(e.getStatusCode()).body(parseError(e));
-        }
-    }
-
-    private ResponseEntity<?> delete(String url) {
-        try {
-            restTemplate.delete(url);
-            return ResponseEntity.noContent().build();
-        } catch (HttpClientErrorException e) {
-            log.warn("Error recibido desde Notification Service al eliminar: Status {}", e.getStatusCode());
-            return ResponseEntity.status(e.getStatusCode()).body(parseError(e));
-        }
-    }
-
-    private Map<String, Object> parseError(HttpClientErrorException e) {
-        try {
-            return objectMapper.readValue(e.getResponseBodyAsString(),
-                    new TypeReference<Map<String, Object>>() {});
-        } catch (Exception parseEx) {
-            Map<String, Object> errorBody = new HashMap<>();
-            errorBody.put("status", e.getStatusCode().value());
-            errorBody.put("error", e.getStatusText());
-            errorBody.put("message", e.getResponseBodyAsString());
-            return errorBody;
-        }
+        return downstream.delete(notificationServiceUrl + "/api/notificaciones/admin/mensajes-fallidos/" + id, "Notification Service");
     }
 }

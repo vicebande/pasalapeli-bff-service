@@ -2,10 +2,10 @@ package com.pasalapeli.bff.controller;
 
 import com.pasalapeli.bff.client.TicketClient;
 import com.pasalapeli.bff.dto.UsuarioDTO;
+import com.pasalapeli.bff.exception.BffResponses;
 import com.pasalapeli.bff.service.UsuarioContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,28 +27,14 @@ public class TicketBffController {
         log.info("BFF: Recibida solicitud de compra de ticket");
         // El usuario se resuelve desde la autenticación (JWT o cabeceras de demo),
         // nunca se confía en el usuarioId que envía el cliente.
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "status", HttpStatus.UNAUTHORIZED.value(),
-                    "error", "Unauthorized",
-                    "message", "Usuario no autenticado"
-            ));
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         request.put("usuarioId", usuario.getId());
         return ticketClient.comprarTicket(request);
     }
 
     @GetMapping
     public ResponseEntity<?> listarMisTickets(Authentication authentication) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "status", HttpStatus.UNAUTHORIZED.value(),
-                    "error", "Unauthorized",
-                    "message", "Usuario no autenticado"
-            ));
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         return ResponseEntity.ok(ticketClient.listarPorUsuario(usuario.getId()));
     }
 
@@ -77,20 +63,9 @@ public class TicketBffController {
 
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<?> listarPorUsuario(Authentication authentication, @PathVariable Long usuarioId) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "status", HttpStatus.UNAUTHORIZED.value(),
-                    "error", "Unauthorized",
-                    "message", "Usuario no autenticado"
-            ));
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         if (!usuario.getId().equals(usuarioId) && !esAdmin(authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                    "status", HttpStatus.FORBIDDEN.value(),
-                    "error", "Forbidden",
-                    "message", "Solo puedes consultar tus propios tickets"
-            ));
+            return BffResponses.forbidden("Solo puedes consultar tus propios tickets");
         }
         return ResponseEntity.ok(ticketClient.listarPorUsuario(usuarioId));
     }
@@ -98,16 +73,10 @@ public class TicketBffController {
     /**
      * Verifica que el ticket pertenezca al usuario autenticado (o que sea ADMIN).
      * Devuelve null si el acceso esta permitido; la respuesta 401/403 correspondiente en caso contrario.
+     * El 401 lo lanza UsuarioContext.requerido() (mismo cuerpo JSON que antes).
      */
     private ResponseEntity<?> verificarOwnership(Authentication authentication, Long ticketId) {
-        UsuarioDTO usuario = usuarioContext.resolverUsuario(authentication);
-        if (usuario == null || usuario.getId() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "status", HttpStatus.UNAUTHORIZED.value(),
-                    "error", "Unauthorized",
-                    "message", "Usuario no autenticado"
-            ));
-        }
+        UsuarioDTO usuario = usuarioContext.requerido(authentication);
         if (esAdmin(authentication)) {
             return null;
         }
@@ -124,11 +93,7 @@ public class TicketBffController {
         if (ticketObj instanceof Map<?, ?> ticketMap) {
             Object propietarioId = ticketMap.get("usuarioId");
             if (propietarioId == null || !String.valueOf(propietarioId).equals(String.valueOf(usuario.getId()))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                        "status", HttpStatus.FORBIDDEN.value(),
-                        "error", "Forbidden",
-                        "message", "Solo el dueno del ticket puede acceder a el"
-                ));
+                return BffResponses.forbidden("Solo el dueno del ticket puede acceder a el");
             }
         }
         return null;
