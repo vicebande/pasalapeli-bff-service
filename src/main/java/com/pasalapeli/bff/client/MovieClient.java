@@ -25,12 +25,22 @@ public class MovieClient {
     @Value("${services.movie-service.url:http://localhost:8082}")
     private String movieServiceUrl;
 
-    public List<?> listarPeliculas(String busqueda) {
-        String url = movieServiceUrl + "/api/movies";
+    public List<?> listarPeliculas(String busqueda, boolean todas) {
+        StringBuilder url = new StringBuilder(movieServiceUrl + "/api/movies");
+        StringBuilder params = new StringBuilder();
         if (busqueda != null && !busqueda.isBlank()) {
-            url += "?busqueda=" + busqueda;
+            params.append("busqueda=").append(busqueda);
         }
-        return restTemplate.getForObject(url, List.class);
+        if (todas) {
+            if (params.length() > 0) {
+                params.append('&');
+            }
+            params.append("todas=true");
+        }
+        if (params.length() > 0) {
+            url.append('?').append(params);
+        }
+        return restTemplate.getForObject(url.toString(), List.class);
     }
 
     public Object obtenerPelicula(Long id) {

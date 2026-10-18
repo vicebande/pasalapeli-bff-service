@@ -15,8 +15,10 @@ public class CarteleraBffController {
     private final MovieClient movieClient;
 
     @GetMapping
-    public ResponseEntity<List<?>> listarCartelera(@RequestParam(required = false) String busqueda) {
-        return ResponseEntity.ok(movieClient.listarPeliculas(busqueda));
+    public ResponseEntity<List<?>> listarCartelera(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false, defaultValue = "false") boolean todas) {
+        return ResponseEntity.ok(movieClient.listarPeliculas(busqueda, todas));
     }
 
     @GetMapping("/{id}")

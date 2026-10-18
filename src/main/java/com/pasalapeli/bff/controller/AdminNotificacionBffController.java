@@ -54,6 +54,13 @@ public class AdminNotificacionBffController {
         return notificationClient.eliminarRegla(id);
     }
 
+    // ------------------------------ Anuncio manual ------------------------------
+
+    @PostMapping("/anuncios")
+    public ResponseEntity<?> crearAnuncio(@RequestBody Map<String, Object> request) {
+        return notificationClient.crearAnuncio(request);
+    }
+
     // --------------------------- Mensajes fallidos ---------------------------
 
     @GetMapping("/mensajes-fallidos")

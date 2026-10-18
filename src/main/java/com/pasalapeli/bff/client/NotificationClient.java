@@ -80,4 +80,8 @@ public class NotificationClient {
     public ResponseEntity<?> eliminarMensajeFallido(Long id) {
         return downstream.delete(notificationServiceUrl + "/api/notificaciones/admin/mensajes-fallidos/" + id, "Notification Service");
     }
+
+    public ResponseEntity<?> crearAnuncio(Object request) {
+        return downstream.post(notificationServiceUrl + "/api/notificaciones/admin/anuncios", request, "Notification Service");
+    }
 }
