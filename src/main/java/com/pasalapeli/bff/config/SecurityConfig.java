@@ -23,6 +23,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +55,14 @@ public class SecurityConfig {
 
     @Value("${app.cors.allowed-origins:*}")
     private String corsAllowedOrigins;
+
+    @PostConstruct
+    void warnIfDemoMode() {
+        if (!azureEnabled) {
+            log.warn("AZURE_AUTH_ENABLED=false: MODO DEMO ACTIVO — las cabeceras X-Dev-User-* son confiables. "
+                    + "NO usar en produccion; establecer AZURE_AUTH_ENABLED=true.");
+        }
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

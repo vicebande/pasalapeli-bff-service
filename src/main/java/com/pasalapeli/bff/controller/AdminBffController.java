@@ -45,6 +45,22 @@ public class AdminBffController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping(value = "/movies/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> actualizarPeliculaJson(@PathVariable Long id, @RequestBody Object request) {
+        log.info("BFF: Solicitud de actualización de película ID: {} (JSON)", id);
+        return ResponseEntity.ok(movieClient.actualizarPeliculaJson(id, request));
+    }
+
+    @PutMapping(value = "/movies/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> actualizarPeliculaMultipart(
+            @PathVariable Long id,
+            @RequestPart("datos") String datosJson,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen) throws IOException {
+        log.info("BFF: Solicitud de actualización de película ID: {} (multipart)", id);
+        Object datosObj = objectMapper.readValue(datosJson, Object.class);
+        return ResponseEntity.ok(movieClient.actualizarPeliculaMultipart(id, datosObj, imagen));
+    }
+
     @PostMapping("/funciones")
     public ResponseEntity<?> crearFuncion(@RequestBody Object funcionRequest) {
         log.info("BFF: Solicitud de creación de función (Admin)");

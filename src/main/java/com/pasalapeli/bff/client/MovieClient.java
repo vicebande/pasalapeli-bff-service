@@ -26,21 +26,17 @@ public class MovieClient {
     private String movieServiceUrl;
 
     public List<?> listarPeliculas(String busqueda, boolean todas) {
-        StringBuilder url = new StringBuilder(movieServiceUrl + "/api/movies");
-        StringBuilder params = new StringBuilder();
+        org.springframework.web.util.UriComponentsBuilder builder =
+                org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(movieServiceUrl + "/api/movies");
         if (busqueda != null && !busqueda.isBlank()) {
-            params.append("busqueda=").append(busqueda);
+            builder.queryParam("busqueda", busqueda);
         }
         if (todas) {
-            if (params.length() > 0) {
-                params.append('&');
-            }
-            params.append("todas=true");
+            builder.queryParam("todas", "true");
         }
-        if (params.length() > 0) {
-            url.append('?').append(params);
-        }
-        return restTemplate.getForObject(url.toString(), List.class);
+        // toUri() (no toUriString): evita que RestTemplate vuelva a codificar '%'
+        java.net.URI uri = builder.build().encode().toUri();
+        return restTemplate.getForObject(uri, List.class);
     }
 
     public Object obtenerPelicula(Long id) {
@@ -90,6 +86,46 @@ public class MovieClient {
 
     public void eliminarPelicula(Long id) {
         restTemplate.delete(movieServiceUrl + "/api/movies/" + id);
+    }
+
+    public Object actualizarPeliculaJson(Long id, Object request) {
+        ResponseEntity<Object> resp = restTemplate.exchange(
+                movieServiceUrl + "/api/movies/" + id,
+                HttpMethod.PUT,
+                new HttpEntity<>(request),
+                Object.class);
+        return resp.getBody();
+    }
+
+    public Object actualizarPeliculaMultipart(Long id, Object request, MultipartFile imagen) throws IOException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+
+        HttpHeaders jsonHeaders = new HttpHeaders();
+        jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
+        body.add("datos", new HttpEntity<>(request, jsonHeaders));
+
+        if (imagen != null && !imagen.isEmpty()) {
+            ByteArrayResource fileResource = new ByteArrayResource(imagen.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return imagen.getOriginalFilename();
+                }
+            };
+            HttpHeaders fileHeaders = new HttpHeaders();
+            fileHeaders.setContentType(MediaType.parseMediaType(
+                    imagen.getContentType() != null ? imagen.getContentType() : "application/octet-stream"));
+            body.add("imagen", new HttpEntity<>(fileResource, fileHeaders));
+        }
+
+        ResponseEntity<Object> resp = restTemplate.exchange(
+                movieServiceUrl + "/api/movies/" + id,
+                HttpMethod.PUT,
+                new HttpEntity<>(body, headers),
+                Object.class);
+        return resp.getBody();
     }
 
     public Object crearFuncion(Object funcionRequest) {
