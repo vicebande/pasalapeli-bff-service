@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: bff-service
-          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/pasalapeli-images/bff-service:latest
+          image: 439738332704.dkr.ecr.us-east-1.amazonaws.com/pasalapeli-images/bff-service:latest
           ports:
             - containerPort: 8082
           env:
