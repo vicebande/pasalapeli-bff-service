@@ -19,8 +19,17 @@ spec:
         - name: bff-service
           image: 439738332704.dkr.ecr.us-east-1.amazonaws.com/pasalapeli-images/bff-service:latest
           ports:
-            - containerPort: 8082
+            - containerPort: 8080
           env:
             - name: ENVIRONMENT
               value: "dev"
+          envFrom:
+            - secretRef:
+                name: pasalapeli-aws-secret
+            - secretRef:
+                name: pasalapeli-service-urls-secret
+            - secretRef:
+                name: pasalapeli-kinesis-secret
+            - secretRef:
+                name: pasalapeli-internal-token-secret
           imagePullPolicy: IfNotPresent

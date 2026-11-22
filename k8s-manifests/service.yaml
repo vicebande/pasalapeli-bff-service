@@ -9,7 +9,7 @@ spec:
   selector:
     app: pasalapeli-bff-service
   ports:
-    - port: 8082
-      targetPort: 8082
+    - port: 8080
+      targetPort: 8080
       protocol: TCP
   type: ClusterIP
