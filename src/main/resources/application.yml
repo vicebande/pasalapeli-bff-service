@@ -45,3 +45,11 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+  # Amazon Kinesis Data Streams (metricas de ventas + logs de seguridad)
+  kinesis:
+    stream-ventas: ${KINESIS_STREAM_VENTAS:stream-ventas}
+    stream-security-logs: ${KINESIS_STREAM_SECURITY_LOGS:stream-security-logs}
+  # Dashboard de metricas en tiempo real
+  metrics:
+    poll-ms: ${METRICS_POLL_MS:1000}        # lectura de stream-ventas
+    broadcast-ms: ${METRICS_BROADCAST_MS:1500}  # push por /topic/metrics

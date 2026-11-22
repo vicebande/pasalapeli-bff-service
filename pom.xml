@@ -17,12 +17,38 @@
 
     <properties>
         <java.version>21</java.version>
+        <aws.sdk.version>2.25.70</aws.sdk.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- AWS SDK v2 (Kinesis): misma version que gestionan los demas
+                 servicios via spring-cloud-aws-dependencies 3.2.0 -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- WebSocket STOMP: dashboard de metricas en tiempo real (/ws -> /topic/metrics) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <!-- Amazon Kinesis Data Streams: consumidor de stream-ventas (metricas)
+             y productor de stream-security-logs (eventos blue-team) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kinesis</artifactId>
         </dependency>
         <!-- Spring Security & OAuth2 Resource Server para validar JWT de Azure AD -->
         <dependency>

@@ -17,11 +17,12 @@ import java.util.List;
  * - Authorization (JWT de Azure AD): permite que los servicios validen el mismo token
  *   que ya valido el BFF (defensa en profundidad).
  * - X-Dev-User-Role / X-Dev-User-Email: preserva la identidad del modo demo.
+ * - X-Forwarded-For: IP de origen del cliente (metrica de ventas en Kinesis).
  */
 public class RequestHeaderRelayInterceptor implements ClientHttpRequestInterceptor {
 
     private static final List<String> RELAY_HEADERS = List.of(
-            "Authorization", "X-Dev-User-Role", "X-Dev-User-Email");
+            "Authorization", "X-Dev-User-Role", "X-Dev-User-Email", "X-Forwarded-For");
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)

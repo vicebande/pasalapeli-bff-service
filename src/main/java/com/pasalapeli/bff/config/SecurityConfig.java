@@ -75,6 +75,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/cartelera/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/login-info").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // WebSocket del dashboard de metricas: el handshake del
+                        // navegador no puede adjuntar el Bearer de Azure AD.
+                        // Solo expone metricas agregadas (sin datos personales).
+                        .requestMatchers("/ws/**").permitAll()
                         // Healthcheck de Docker / Actuator (no requiere autenticacion)
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Rutas exclusivas para administradores
