@@ -20,7 +20,7 @@ public class NotificationClient {
     private final RestTemplate restTemplate;
     private final DownstreamClient downstream;
 
-    @Value("${services.notification-service.url:http://localhost:8084}")
+    @Value("${services.notification-service.url:http://pasalapeli-notification-service:8080}")
     private String notificationServiceUrl;
 
     // ------------------------------ Usuario ------------------------------

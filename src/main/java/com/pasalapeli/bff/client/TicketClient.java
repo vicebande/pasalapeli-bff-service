@@ -18,7 +18,7 @@ public class TicketClient {
     private final RestTemplate restTemplate;
     private final DownstreamClient downstream;
 
-    @Value("${services.ticket-service.url:http://localhost:8083}")
+    @Value("${services.ticket-service.url:http://pasalapeli-ticket-service:8080}")
     private String ticketServiceUrl;
 
     public ResponseEntity<?> comprarTicket(Object request) {

@@ -22,7 +22,7 @@ public class MovieClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${services.movie-service.url:http://localhost:8082}")
+    @Value("${services.movie-service.url:http://pasalapeli-movie-service:8080}")
     private String movieServiceUrl;
 
     public List<?> listarPeliculas(String busqueda, boolean todas) {
