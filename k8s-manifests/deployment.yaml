@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pasalapeli-bff-service
+  namespace: default
+  labels:
+    app: pasalapeli-bff-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pasalapeli-bff-service
+  template:
+    metadata:
+      labels:
+        app: pasalapeli-bff-service
+    spec:
+      containers:
+        - name: bff-service
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/pasalapeli-images/bff-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: ENVIRONMENT
+              value: "dev"
+          imagePullPolicy: IfNotPresent
